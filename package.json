@@ -1,0 +1,12 @@
+{
+	"version": "0.0.0",
+	"devDependencies": {
+		"@types/node": "^18.7.13",
+		"@types/yargs": "^17.0.11",
+		"unbuild": "^0.8.9"
+	},
+	"dependencies": {
+		"picocolors": "^1.0.0",
+		"yargs": "^17.5.1"
+	}
+}
