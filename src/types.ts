@@ -14,3 +14,8 @@ export interface CommonOptions {
 	force?: boolean
 	packageMode?: { [name: string]: PackageMode }
 }
+
+export interface UsageOptions extends CommonOptions {
+	detail: boolean
+	recursive: true
+}

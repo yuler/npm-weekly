@@ -4,6 +4,8 @@ import { hideBin } from 'yargs/helpers'
 import c from 'picocolors'
 import { version } from '../package.json'
 import type { CommonOptions } from './types'
+import { LOGLEVELS, resolveConfig } from './config'
+import { usage } from './commands/usage'
 
 function commonOptions(args: Argv<{}>): Argv<CommonOptions> {
 	return args
@@ -122,7 +124,8 @@ yargs(hideBin(process.argv))
 				.help()
 		},
 		async (args) => {
-			await check(await resolveConfig(args))
+			console.log('check')
+			// await check(await resolveConfig(args))
 			process.exit()
 		}
 	)
