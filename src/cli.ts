@@ -3,7 +3,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import c from 'picocolors'
 import { version } from '../package.json'
-// import { check } from './commands/check'
+import { check } from './commands/check'
 import { usage } from './commands/usage'
 import type { CommonOptions } from './types'
 import { LOGLEVELS, resolveConfig } from './config'
@@ -126,7 +126,7 @@ yargs(hideBin(process.argv))
 				.help()
 		},
 		async (args) => {
-			// await check(await resolveConfig(args))
+			await check(await resolveConfig(args))
 			process.exit()
 		}
 	)
