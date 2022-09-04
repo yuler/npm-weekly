@@ -1,8 +1,23 @@
-import os from 'os'
-import { resolve } from 'path'
 import { existsSync, promises as fs, lstatSync } from 'fs'
+import { resolve } from 'path'
+import os from 'os'
+import pacote from 'pacote'
+import semver from 'semver'
 import _debug from 'debug'
-import { PackageData } from '../types'
+import { npmConfig } from '../utils/npm'
+import type {
+	CheckOptions,
+	DependencyFilter,
+	DependencyResolvedCallback,
+	PackageData,
+	PackageMeta,
+	RangeMode,
+	RawDep,
+	ResolvedDepChange,
+} from '../types'
+import { diffSorter } from '../filters/diff-sorter'
+import { getMaxSatisfying, getPrefixedVersion } from '../utils/versions'
+import { getPackageMode } from '../utils/config'
 
 const debug = {
 	cache: _debug('taze:cache'),
@@ -84,4 +99,121 @@ export async function getPackageData(name: string): Promise<PackageData> {
 		versions: [],
 		error: error?.statusCode?.toString() || error,
 	}
+}
+
+export function getVersionOfRange(dep: ResolvedDepChange, range: RangeMode) {
+	const { versions, tags } = dep.pkgData
+	return getMaxSatisfying(versions, dep.currentVersion, range, tags)
+}
+
+export function updateTargetVersion(dep: ResolvedDepChange, version: string, forgiving = true) {
+	dep.targetVersion = getPrefixedVersion(dep.currentVersion, version) || dep.currentVersion
+	dep.targetVersionTime = dep.pkgData.time?.[version]
+
+	try {
+		const current = semver.minVersion(dep.currentVersion)!
+		const target = semver.minVersion(dep.targetVersion)!
+
+		dep.currentVersionTime = dep.pkgData.time?.[current.toString()]
+		dep.diff = semver.diff(current, target)
+		dep.update = dep.diff !== null && semver.lt(current, target)
+	} catch (e) {
+		if (!forgiving) throw e
+		dep.targetVersion = dep.currentVersion
+		dep.diff = 'error'
+		dep.update = false
+	}
+}
+
+export async function resolveDependency(raw: RawDep, options: CheckOptions, filter: DependencyFilter = () => true) {
+	const dep = { ...raw } as ResolvedDepChange
+
+	const configMode = getPackageMode(dep.name, options)
+	const optionMode = options.mode
+	const mergeMode = configMode
+		? configMode === optionMode
+			? optionMode
+			: optionMode === 'default'
+			? configMode
+			: 'ignore'
+		: optionMode
+	if (!raw.update || !(await Promise.resolve(filter(raw))) || mergeMode === 'ignore') {
+		return {
+			...raw,
+			diff: null,
+			targetVersion: raw.currentVersion,
+			update: false,
+		} as ResolvedDepChange
+	}
+
+	const pkgData = await getPackageData(dep.name)
+	const { tags, error } = pkgData
+	dep.pkgData = pkgData
+	let err: Error | string | null = null
+	let target: string | undefined
+
+	if (error == null) {
+		try {
+			target = getVersionOfRange(dep, mergeMode as RangeMode)
+		} catch (e: any) {
+			err = e.message || e
+		}
+	} else {
+		err = error
+	}
+
+	if (target) updateTargetVersion(dep, target)
+	else dep.targetVersion = dep.currentVersion
+
+	if (dep.targetVersion === dep.currentVersion) {
+		dep.diff = null
+		dep.update = false
+	}
+
+	try {
+		const targetVersion = semver.minVersion(target || dep.targetVersion)
+		if (tags.latest && targetVersion && semver.gt(tags.latest, targetVersion)) dep.latestVersionAvailable = tags.latest
+	} catch {}
+
+	if (err) {
+		dep.diff = 'error'
+		dep.update = false
+		dep.resolveError = err
+		return dep
+	}
+
+	return dep
+}
+
+export async function resolveDependencies(
+	deps: RawDep[],
+	options: CheckOptions,
+	filter: DependencyFilter = () => true,
+	progressCallback: (name: string, counter: number, total: number) => void = () => {}
+) {
+	const total = deps.length
+	let counter = 0
+
+	return Promise.all(
+		deps.map(async (raw) => {
+			const dep = await resolveDependency(raw, options, filter)
+			counter += 1
+			progressCallback(raw.name, counter, total)
+			return dep
+		})
+	)
+}
+
+export async function resolvePackage(
+	pkg: PackageMeta,
+	options: CheckOptions,
+	filter?: DependencyFilter,
+	progress?: DependencyResolvedCallback
+) {
+	const resolved = await resolveDependencies(pkg.deps, options, filter, (name, counter, total) =>
+		progress?.(pkg.name, name, counter, total)
+	)
+	diffSorter(resolved)
+	pkg.resolved = resolved
+	return pkg
 }

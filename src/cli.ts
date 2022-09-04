@@ -3,9 +3,10 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import c from 'picocolors'
 import { version } from '../package.json'
+// import { check } from './commands/check'
+import { usage } from './commands/usage'
 import type { CommonOptions } from './types'
 import { LOGLEVELS, resolveConfig } from './config'
-import { usage } from './commands/usage'
 
 function commonOptions(args: Argv<{}>): Argv<CommonOptions> {
 	return args
@@ -61,6 +62,7 @@ function commonOptions(args: Argv<{}>): Argv<CommonOptions> {
 		})
 }
 
+// eslint-disable-next-line no-unused-expressions
 yargs(hideBin(process.argv))
 	.scriptName('taze')
 	.usage('$0 [args]')
@@ -124,7 +126,6 @@ yargs(hideBin(process.argv))
 				.help()
 		},
 		async (args) => {
-			console.log('check')
 			// await check(await resolveConfig(args))
 			process.exit()
 		}

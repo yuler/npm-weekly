@@ -1,11 +1,13 @@
 {
+	"name": "taze",
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "cross-env DEBUG=taze:* esmo ./src/cli.ts usage -r"
+		"test": "DEBUG=taze:* esmo ./src/cli.ts usage -r -a"
 	},
 	"dependencies": {
 		"detect-indent": "^7.0.0",
+		"libnpmconfig": "^1.2.1",
 		"pacote": "^13.6.2",
 		"picocolors": "^1.0.0",
 		"semver": "^7.3.7",
@@ -13,11 +15,13 @@
 		"yargs": "^17.5.1"
 	},
 	"devDependencies": {
+		"@types/cli-progress": "^3.11.0",
 		"@types/debug": "^4.1.7",
 		"@types/node": "^18.7.13",
 		"@types/pacote": "^11.1.5",
 		"@types/semver": "^7.3.12",
 		"@types/yargs": "^17.0.11",
+		"cli-progress": "^3.11.2",
 		"cross-env": "^7.0.3",
 		"debug": "^4.3.4",
 		"deepmerge": "^4.2.2",
