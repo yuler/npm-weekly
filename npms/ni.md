@@ -1,6 +1,6 @@
 # ni
 
-[@antfu/ni](http://npm.im/@antfu/ni)💡 Use the right package manager
+[@antfu/ni](http://npm.im/@antfu/ni) 💡 Use the right package manager
 
 ## How it Works
 
@@ -15,5 +15,7 @@
   - `debug` 模式只输出命令
 - `parse.ts` 解析不同的命令
   - 定义 `parseNi`, `parseNr`, `parseNu`, `parseNun`, `parseNx`, `parseNa` 通过 `agent`, `args` 和 `ctx` 返回不同的 `command`
-- `agents` 定义不同的命令的映射
-- ``
+- `agents.ts` 定义不同的命令的映射
+- `config.ts` 加载(当前/默认/全局)配置
+- `detect.ts` 探测当前 `agent`
+- `storage.ts` 存储 json 临时文件
